@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Fonts -->
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&amp;family=Plus+Jakarta+Sans:wght@500;700;800&amp;family=Inter:wght@400;500&amp;display=swap');
+      
+      .brand-title {
+        font-family: 'Instrument Serif', Georgia, serif;
+        font-style: italic;
+        fill: #ffffff;
+      }
+      .font-display {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      .font-sans {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+    </style>
+    
+    <!-- Gradients -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#09090b" />
+      <stop offset="50%" stop-color="#0c0c0f" />
+      <stop offset="100%" stop-color="#111115" />
+    </linearGradient>
+    
+    <linearGradient id="stroke-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="50%" stop-color="#818cf8" />
+      <stop offset="100%" stop-color="#c7d2fe" />
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="14" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg-grad)" />
+
+  <!-- Ambient Glow Background Graphics -->
+  <circle cx="600" cy="315" r="350" fill="#6366f1" opacity="0.06" filter="url(#glow)" />
+  <circle cx="200" cy="150" r="200" fill="#3f3f46" opacity="0.03" filter="url(#glow)" />
+  <circle cx="1000" cy="500" r="200" fill="#3f3f46" opacity="0.03" filter="url(#glow)" />
+
+  <!-- Centered Logo & Brand Name -->
+  <g transform="translate(485, 100)">
+    <!-- Logo Icon -->
+    <rect width="56" height="56" rx="14" fill="#1e1b4b" stroke="#312e81" stroke-width="1.5" />
+    <svg x="10" y="10" width="36" height="36" viewBox="0 0 32 32" fill="none">
+      <path d="M8 22 C10 14, 14 8, 18 8 C22 8, 24 12, 22 18 C20 24, 16 26, 12 24 C9 22.5, 11 17, 16 15 C21 13, 24 17, 26 21" stroke="#818cf8" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="26" cy="21" r="2" fill="#818cf8"/>
+    </svg>
+    
+    <!-- Brand Title Text -->
+    <text x="72" y="40" font-size="40" font-weight="bold" class="font-display" fill="#ffffff" letter-spacing="-1">Signity</text>
+    <circle cx="205" cy="39" r="4" fill="#6366f1" />
+  </g>
+
+  <!-- Centered Headline & Description -->
+  <g class="font-display" text-anchor="middle">
+    <!-- Big Headline -->
+    <text x="600" y="270" font-size="64" font-weight="850" fill="#ffffff" letter-spacing="-2" filter="url(#shadow)">
+      High-Fidelity <tspan fill="url(#stroke-grad)">Signature Creator.</tspan>
+    </text>
+    
+    <!-- Description Copy -->
+    <text x="600" y="350" font-size="22" font-weight="400" class="font-sans" fill="#a1a1aa" letter-spacing="-0.5">
+      <tspan x="600" y="350">Draw elegant signatures. Automatically cropped, 100% private,</tspan>
+      <tspan x="600" y="388">and exported client-side in premium, transparent PNG.</tspan>
+    </text>
+  </g>
+
+  <!-- Centered Sweeping Accent Signature Path Graphics at bottom -->
+  <g transform="translate(0, 0)">
+    <!-- Glow Underlay -->
+    <path d="M 280 500 C 400 460, 480 410, 560 480 C 640 550, 720 480, 820 430 C 880 400, 920 480, 970 490" 
+          fill="none" stroke="#6366f1" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity="0.25" filter="url(#glow)" />
+    
+    <!-- Sharp Front Path -->
+    <path d="M 280 500 C 400 460, 480 410, 560 480 C 640 550, 720 480, 820 430 C 880 400, 920 480, 970 490" 
+          fill="none" stroke="url(#stroke-grad)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>
