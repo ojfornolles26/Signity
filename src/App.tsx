@@ -284,7 +284,7 @@ export default function App() {
 
   return (
     <div 
-      className="min-h-screen bg-[#fafafa] dark:bg-[#09090b] text-zinc-800 dark:text-zinc-100 transition-colors duration-300 flex flex-col font-sans selection:bg-zinc-200 dark:selection:bg-zinc-800" 
+      className="min-h-screen bg-[#faf8f5] dark:bg-[#09090b] text-zinc-800 dark:text-zinc-100 transition-colors duration-300 flex flex-col font-sans selection:bg-indigo-100 dark:selection:bg-zinc-800" 
       id="app-root-container"
     >
       {/* Toast Announcement */}
