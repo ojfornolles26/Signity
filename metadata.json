@@ -1,0 +1,6 @@
+{
+  "name": "Signity",
+  "description": "A simple, distraction-free signature whiteboard application for students to draw, auto-crop, and download clean transparent PNG signatures.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
