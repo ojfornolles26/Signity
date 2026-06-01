@@ -296,7 +296,7 @@ export default function App() {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4.5 py-3 rounded-xl shadow-xl border text-xs font-sans ${
               toast.type === 'success'
-                ? 'bg-zinc-900 dark:bg-zinc-100 border-transparent text-zinc-100 dark:text-zinc-900'
+                ? 'bg-indigo-50 dark:bg-indigo-950/90 border-indigo-200/80 dark:border-indigo-900/60 text-indigo-800 dark:text-indigo-250'
                 : toast.type === 'error'
                 ? 'bg-red-50 dark:bg-red-950/90 border-red-200 dark:border-red-900 text-red-800 dark:text-red-200'
                 : 'bg-zinc-900 dark:bg-zinc-100 border-transparent text-zinc-100 dark:text-zinc-900'
@@ -306,7 +306,7 @@ export default function App() {
             {toast.type === 'error' ? (
               <AlertCircle className="w-4 h-4 shrink-0" />
             ) : toast.type === 'success' ? (
-              <Check className="w-4 h-4 shrink-0 text-emerald-500 dark:text-emerald-600" />
+              <Check className="w-4 h-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
             ) : null}
             <span className="font-semibold leading-normal">{toast.message}</span>
           </motion.div>
@@ -315,11 +315,11 @@ export default function App() {
 
       <main className="flex-1 w-full max-w-[960px] mx-auto px-6 py-10 md:py-16 flex flex-col justify-center" id="main-content-layout">
         {/* Minimal Header */}
-        <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8" id="main-header">
-          <div className="flex flex-col" id="brand-logo-title-container">
-            <div className="flex items-center gap-2.5 mb-1" id="logo-brand-header">
+        <header className="flex flex-col gap-2.5 mb-8" id="main-header">
+          <div className="flex items-center justify-between w-full" id="brand-logo-row">
+            <div className="flex items-center gap-2.5" id="logo-brand-header">
               <svg 
-                className="w-8 h-8 text-zinc-900 dark:text-zinc-50 stroke-current transition-colors duration-300 shrink-0"
+                className="w-8 h-8 text-indigo-600 dark:text-indigo-400 stroke-current transition-colors duration-300 shrink-0"
                 viewBox="0 0 32 32"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -336,40 +336,41 @@ export default function App() {
                 Signity
               </h1>
             </div>
-            <p className="text-zinc-500 dark:text-zinc-400 text-xs font-medium tracking-wide leading-relaxed transition-colors duration-300">
-              Draw with your mouse, stylus, or trackpad. The exported PNG will be cropped to your signature bounds automatically.
-            </p>
+            
+            <div 
+              className="flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-900/60 p-0.5 rounded-full border border-zinc-200/60 dark:border-zinc-800/85 shadow-2xs transition-all duration-300" 
+              id="theme-toggle-container"
+            >
+              <button
+                onClick={() => setIsDark(false)}
+                className={`w-7.5 h-7.5 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${
+                  !isDark 
+                    ? 'bg-white text-zinc-900 shadow-2xs font-semibold' 
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+                aria-label="Light mode"
+                title="Light theme"
+              >
+                <Sun className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setIsDark(true)}
+                className={`w-7.5 h-7.5 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${
+                  isDark 
+                    ? 'bg-zinc-800 text-zinc-100 shadow-2xs font-semibold' 
+                    : 'text-zinc-400 hover:text-zinc-600'
+                }`}
+                aria-label="Dark mode"
+                title="Dark theme"
+              >
+                <Moon className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
           
-          <div 
-            className="flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-900/60 p-0.5 rounded-full border border-zinc-200/60 dark:border-zinc-800/85 shadow-2xs self-start sm:self-auto transition-all duration-300" 
-            id="theme-toggle-container"
-          >
-            <button
-              onClick={() => setIsDark(false)}
-              className={`w-7.5 h-7.5 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${
-                !isDark 
-                  ? 'bg-white text-zinc-900 shadow-2xs font-semibold' 
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-              aria-label="Light mode"
-              title="Light theme"
-            >
-              <Sun className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setIsDark(true)}
-              className={`w-7.5 h-7.5 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${
-                isDark 
-                  ? 'bg-zinc-800 text-zinc-100 shadow-2xs font-semibold' 
-                  : 'text-zinc-400 hover:text-zinc-600'
-              }`}
-              aria-label="Dark mode"
-              title="Dark theme"
-            >
-              <Moon className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <p className="text-zinc-500 dark:text-zinc-400 text-xs font-medium tracking-wide leading-relaxed transition-colors duration-300 max-w-xl">
+            Draw with your mouse, stylus, or trackpad. The exported PNG will be cropped to your signature bounds automatically.
+          </p>
         </header>
 
         {/* Signature Whiteboard Component with Floating Toolbar */}
@@ -447,7 +448,7 @@ export default function App() {
                       }}
                       className={`w-7 h-7 rounded-full transition-all duration-300 border border-zinc-200/20 dark:border-zinc-700/20 active:scale-90 cursor-pointer ${
                         isActive 
-                          ? 'ring-2 ring-offset-2 ring-zinc-900 dark:ring-zinc-100 ring-offset-white dark:ring-offset-zinc-900 scale-105 shadow-sm' 
+                          ? 'ring-2 ring-offset-2 ring-indigo-600 dark:ring-indigo-400 ring-offset-white dark:ring-offset-zinc-900 scale-105 shadow-sm' 
                           : 'opacity-70 hover:opacity-100 hover:scale-105'
                       }`}
                       style={{ backgroundColor: isDark ? color.darkColor : color.lightColor }}
@@ -509,13 +510,13 @@ export default function App() {
                   }}
                   className={`h-8 px-3 rounded-xl border flex items-center gap-2 text-xs font-semibold transition-all duration-300 active:scale-95 cursor-pointer self-start ${
                     highPrecision
-                      ? 'bg-zinc-900 dark:bg-zinc-100 border-transparent text-white dark:text-zinc-900 shadow-xs'
+                      ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200/80 dark:border-indigo-900/60 text-indigo-600 dark:text-indigo-400 shadow-xs'
                       : 'bg-transparent border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40 hover:text-zinc-900 dark:hover:text-zinc-200'
                   }`}
                   id="high-precision-mode-toggle"
                   title="Smoothes curves to remove trackpad or mouse hand-jitters"
                 >
-                  <div className={`w-1.5 h-1.5 rounded-full ${highPrecision ? 'bg-white dark:bg-zinc-900 animate-pulse' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
+                  <div className={`w-1.5 h-1.5 rounded-full ${highPrecision ? 'bg-indigo-600 dark:bg-indigo-400 animate-pulse' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
                   <span>High Precision</span>
                 </button>
               </div>
@@ -565,7 +566,7 @@ export default function App() {
               <button
                 onClick={handleDownload}
                 disabled={strokes.length === 0}
-                className="flex items-center gap-2 px-4.5 py-2.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 rounded-xl font-bold text-xs shadow-sm transition-all duration-300 w-full sm:w-auto justify-center cursor-pointer"
+                className="flex items-center gap-2 px-4.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 text-white rounded-xl font-bold text-xs shadow-sm transition-all duration-300 w-full sm:w-auto justify-center cursor-pointer"
                 id="primary-download-button"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -596,17 +597,19 @@ export default function App() {
               return (
                 <div 
                   key={index}
-                  className="border border-zinc-200/70 dark:border-zinc-800/60 bg-white dark:bg-zinc-900/40 rounded-2xl overflow-hidden transition-all duration-300"
+                  className="border border-zinc-200/70 dark:border-zinc-800/60 bg-white dark:bg-zinc-900/80 rounded-2xl overflow-hidden transition-all duration-300"
                 >
                   <button
                     onClick={() => setOpenFaqIndex(isOpen ? null : index)}
-                    className="w-full px-5 py-4 flex items-center justify-between text-left font-semibold text-zinc-800 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white transition-all duration-200 gap-4 cursor-pointer text-xs sm:text-sm select-none"
+                    className={`w-full px-5 py-4 flex items-center justify-between text-left font-semibold hover:text-zinc-900 dark:hover:text-white transition-all duration-200 gap-4 cursor-pointer text-xs sm:text-sm select-none ${
+                      isOpen ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-800 dark:text-zinc-200'
+                    }`}
                     aria-expanded={isOpen}
                   >
                     <span>{faq.question}</span>
                     <ChevronDown 
-                      className={`w-4 h-4 text-zinc-400 dark:text-zinc-500 transition-transform duration-300 shrink-0 ${
-                        isOpen ? 'rotate-180 text-zinc-900 dark:text-zinc-200' : ''
+                      className={`w-4 h-4 transition-transform duration-300 shrink-0 ${
+                        isOpen ? 'rotate-180 text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 dark:text-zinc-500'
                       }`} 
                     />
                   </button>
@@ -637,7 +640,7 @@ export default function App() {
         <div className="max-w-[960px] mx-auto px-6 flex flex-col items-center justify-center gap-2.5">
           <div className="flex items-center gap-1.5 mb-1" id="logo-brand-footer">
             <svg 
-              className="w-5 h-5 text-zinc-900 dark:text-zinc-50 stroke-current transition-colors duration-300 shrink-0"
+              className="w-5 h-5 text-indigo-600 dark:text-indigo-400 stroke-current transition-colors duration-300 shrink-0"
               viewBox="0 0 32 32"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -695,7 +698,7 @@ export default function App() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="relative bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col z-10 max-h-[calc(100vh-2rem)]"
+              className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col z-10 max-h-[calc(100vh-2rem)]"
               id="preview-modal-container"
             >
               {/* Header block with meta and status */}
@@ -755,7 +758,7 @@ export default function App() {
               </div>
 
               {/* Action buttons footer */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 px-6 py-4 bg-white dark:bg-zinc-950 shrink-0" id="preview-modal-footer">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 px-6 py-4 bg-white dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800/60 shrink-0" id="preview-modal-footer">
                 <button
                   onClick={() => {
                     handleCopy();
@@ -776,7 +779,7 @@ export default function App() {
                     handleDownload();
                     setIsPreviewOpen(false);
                   }}
-                  className="flex items-center gap-2 justify-center px-4 py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 font-bold text-xs rounded-xl shadow-xs transition-all flex-1 active:scale-95 cursor-pointer"
+                  className="flex items-center gap-2 justify-center px-4 py-3 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 text-white dark:text-white font-bold text-xs rounded-xl shadow-xs transition-all flex-1 active:scale-95 cursor-pointer"
                   id="preview-modal-action-download"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -809,7 +812,7 @@ export default function App() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="relative bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col z-10 max-h-[calc(100vh-2rem)]"
+              className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col z-10 max-h-[calc(100vh-2rem)]"
               id="legal-modal-container"
             >
               {/* Header */}
@@ -879,10 +882,10 @@ export default function App() {
               </div>
 
               {/* Footer Action */}
-              <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100/60 dark:border-zinc-900 shrink-0 flex justify-end" id="legal-modal-footer">
+              <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-100/60 dark:border-zinc-800/60 shrink-0 flex justify-end" id="legal-modal-footer">
                 <button
                   onClick={() => setActiveLegalModal(null)}
-                  className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 font-bold text-xs rounded-xl transition-all active:scale-95 cursor-pointer"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 text-white dark:text-white font-bold text-xs rounded-xl transition-all active:scale-95 cursor-pointer"
                   id="legal-modal-close-button"
                 >
                   I Understand

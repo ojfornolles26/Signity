@@ -21,10 +21,10 @@ export const INK_COLORS = [
   {
     id: 'navy' as const,
     name: 'Royal Indigo',
-    lightColor: '#4338ca',  // Indigo-700
-    darkColor: '#818cf8',   // Indigo-400
+    lightColor: '#4f46e5',  // Indigo-600 (matches brand light accent)
+    darkColor: '#818cf8',   // Indigo-400 (matches brand dark accent)
     exportColor: '#1e1b4b', // Deep Royal Indigo for export
-    circleColor: 'bg-indigo-700 dark:bg-indigo-400',
+    circleColor: 'bg-indigo-600 dark:bg-indigo-400',
   },
   {
     id: 'red' as const,
