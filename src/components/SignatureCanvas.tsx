@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
+import { FileSignature } from 'lucide-react';
 import { Stroke, Point } from '../types';
 import { drawStroke, drawAllStrokes, getStrokesBounds } from '../utils/canvas';
 
@@ -12,26 +13,26 @@ export const INK_COLORS = [
   {
     id: 'black' as const,
     name: 'Black',
-    lightColor: '#0f172a',  // Rich Slate Black
-    darkColor: '#f8fafc',   // Crisp Slate White
-    exportColor: '#090d16', // Deep Solid Black for export
-    circleColor: 'bg-black dark:bg-white',
+    lightColor: '#18181b',  // Onyx Black
+    darkColor: '#f4f4f5',   // Crisp Zinc White
+    exportColor: '#09090b', // Deep Onyx Black for export
+    circleColor: 'bg-zinc-900 dark:bg-zinc-100',
   },
   {
     id: 'navy' as const,
-    name: 'Navy Blue',
-    lightColor: '#1d4ed8',  // Royal Blue
-    darkColor: '#60a5fa',   // Glowing Blue
-    exportColor: '#0b2265', // Standard Dark Navy for export
-    circleColor: 'bg-[#1e3a8a] dark:bg-[#60a5fa]',
+    name: 'Royal Indigo',
+    lightColor: '#4338ca',  // Indigo-700
+    darkColor: '#818cf8',   // Indigo-400
+    exportColor: '#1e1b4b', // Deep Royal Indigo for export
+    circleColor: 'bg-indigo-700 dark:bg-indigo-400',
   },
   {
     id: 'red' as const,
-    name: 'Dark Red',
+    name: 'Crimson Red',
     lightColor: '#b91c1c',  // Deep Crimson Red
     darkColor: '#f87171',   // Soft Red
     exportColor: '#7f1d1d', // Solid Dark Crimson for export
-    circleColor: 'bg-[#991b1b] dark:bg-[#f87171]',
+    circleColor: 'bg-red-700 dark:bg-red-400',
   },
 ];
 
@@ -42,7 +43,6 @@ interface SignatureCanvasProps {
   currentWidth: number;
   isDark: boolean;
   highPrecision: boolean;
-  includeBorder: boolean;
 }
 
 export default function SignatureCanvas({
@@ -52,35 +52,17 @@ export default function SignatureCanvas({
   currentWidth,
   isDark,
   highPrecision,
-  includeBorder,
 }: SignatureCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [activeStroke, setActiveStroke] = useState<Stroke | null>(null);
 
-  // Clearing fade animation state tracking
-  const [fadingStrokes, setFadingStrokes] = useState<Stroke[]>([]);
-  const [isFading, setIsFading] = useState(false);
-  const lastNonEmptyStrokes = useRef<Stroke[]>([]);
-
+  // Keep latest rendering parameters in refs so resize handler can access them without re-subscribing
+  const paramsRef = useRef({ strokes, isDark, highPrecision });
   useEffect(() => {
-    if (strokes.length > 0) {
-      lastNonEmptyStrokes.current = strokes;
-    } else if (strokes.length === 0 && lastNonEmptyStrokes.current.length > 0) {
-      // Clear or trailing Undo to empty was triggered! Set up visual fade loop
-      setFadingStrokes(lastNonEmptyStrokes.current);
-      setIsFading(true);
-
-      const timer = setTimeout(() => {
-        setIsFading(false);
-        setFadingStrokes([]);
-        lastNonEmptyStrokes.current = [];
-      }, 300); // 300ms matching transition CSS animation
-
-      return () => clearTimeout(timer);
-    }
-  }, [strokes]);
+    paramsRef.current = { strokes, isDark, highPrecision };
+  }, [strokes, isDark, highPrecision]);
 
   // Initialize and handle canvas resize
   useEffect(() => {
@@ -107,30 +89,17 @@ export default function SignatureCanvas({
         ctx.scale(dpr, dpr);
         
         // Re-draw all strokes after size update to prevent clearing
+        const { strokes: currentStrokes, isDark: currentIsDark, highPrecision: currentHighPrecision } = paramsRef.current;
         const getVisualColor = (colorId: string) => {
           const colorObj = INK_COLORS.find((c) => c.id === colorId);
           if (!colorObj) return colorId;
-          return isDark ? colorObj.darkColor : colorObj.lightColor;
+          return currentIsDark ? colorObj.darkColor : colorObj.lightColor;
         };
 
-        const strokesToRender = isFading ? fadingStrokes : strokes;
-
-        strokesToRender.forEach((stroke) => {
+        currentStrokes.forEach((stroke) => {
           const vStroke = { ...stroke, color: getVisualColor(stroke.color) };
-          drawStroke(ctx, vStroke, highPrecision);
+          drawStroke(ctx, vStroke, currentHighPrecision);
         });
-
-        // Live visual representation of export boundaries block
-        if (includeBorder && strokesToRender.length > 0) {
-          const bounds = getStrokesBounds(strokesToRender);
-          if (bounds) {
-            ctx.strokeStyle = isDark ? 'rgba(96, 165, 250, 0.4)' : 'rgba(37, 99, 235, 0.35)';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([4, 4]);
-            ctx.strokeRect(bounds.minX + 0.5, bounds.minY + 0.5, bounds.width - 1, bounds.height - 1);
-            ctx.setLineDash([]);
-          }
-        }
       }
     };
 
@@ -151,7 +120,7 @@ export default function SignatureCanvas({
       observer.disconnect();
       window.removeEventListener('resize', resizeAndScale);
     };
-  }, [strokes, fadingStrokes, isFading, isDark, highPrecision, includeBorder]);
+  }, []);
 
   // Synchronize rendering of strokes & active brush stroke
   useEffect(() => {
@@ -172,10 +141,8 @@ export default function SignatureCanvas({
       return isDark ? colorObj.darkColor : colorObj.lightColor;
     };
 
-    const strokesToRender = isFading ? fadingStrokes : strokes;
-
-    // Render historical strokes or transitioning fading strokes
-    strokesToRender.forEach((stroke) => {
+    // Render historical strokes
+    strokes.forEach((stroke) => {
       const visualStroke = {
         ...stroke,
         color: getVisualColor(stroke.color),
@@ -184,26 +151,14 @@ export default function SignatureCanvas({
     });
 
     // Render active drawing stroke
-    if (activeStroke && !isFading) {
+    if (activeStroke) {
       const visualStroke = {
         ...activeStroke,
         color: getVisualColor(activeStroke.color),
       };
       drawStroke(ctx, visualStroke, highPrecision);
     }
-
-    // Live visual representation of export boundaries block
-    if (includeBorder && strokesToRender.length > 0) {
-      const bounds = getStrokesBounds(strokesToRender);
-      if (bounds) {
-        ctx.strokeStyle = isDark ? 'rgba(96, 165, 250, 0.4)' : 'rgba(37, 99, 235, 0.35)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]);
-        ctx.strokeRect(bounds.minX + 0.5, bounds.minY + 0.5, bounds.width - 1, bounds.height - 1);
-        ctx.setLineDash([]);
-      }
-    }
-  }, [strokes, fadingStrokes, isFading, activeStroke, isDark, highPrecision, includeBorder]);
+  }, [strokes, activeStroke, isDark, highPrecision]);
 
   // Handle Event drawing boundaries
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -278,18 +233,18 @@ export default function SignatureCanvas({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-80 sm:h-96 rounded-[32px] bg-white dark:bg-[#151f32] border border-slate-200 dark:border-[#1e293b] shadow-[0_4px_24px_rgba(37,99,235,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] cursor-crosshair overflow-hidden touch-none"
+      className="relative w-full h-80 sm:h-96 rounded-[24px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/80 shadow-[0_2px_12px_rgba(0,0,0,0.02)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] cursor-crosshair overflow-hidden touch-none transition-all duration-300"
       id="signature-whiteboard-container"
     >
       {/* Dynamic Grid Background Patterns for authentic feel */}
       <div 
-        className="absolute inset-0 bg-[radial-gradient(#d1d5db_1px,transparent_1px)] dark:bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-20 pointer-events-none" 
+        className="absolute inset-0 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] dark:bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:24px_24px] opacity-35 pointer-events-none transition-all duration-300" 
         id="whiteboard-grid"
       />
 
       {/* Dotted Baseline guide for signing straight */}
       <div
-        className="absolute bottom-[30%] left-[10%] right-[10%] border-b-2 border-dashed border-slate-200 dark:border-slate-800 pointer-events-none"
+        className="absolute bottom-[30%] left-[10%] right-[10%] border-b border-dashed border-zinc-200/80 dark:border-zinc-800/60 pointer-events-none transition-all duration-300"
         id="dotted-baseline-line"
       />
 
@@ -299,20 +254,19 @@ export default function SignatureCanvas({
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        className={`absolute inset-0 w-full h-full block touch-none select-none z-10 transition-all duration-300 ease-out ${
-          isFading ? 'opacity-0 scale-[0.985] blur-[1px]' : 'opacity-100 scale-100 blur-0'
-        }`}
+        className="absolute inset-0 w-full h-full block touch-none select-none z-10"
         id="drawing-canvas-viewport"
       />
 
       {/* Placeholder guidance helper */}
       {strokes.length === 0 && !activeStroke && (
         <div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 select-none text-center p-4"
+          className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0 select-none text-center p-4 gap-2.5"
           id="canvas-placeholder"
         >
-          <p className="text-sm font-sans text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed font-light">
-            Sign inside this board.
+          <FileSignature className="w-5 h-5 text-zinc-300 dark:text-zinc-700 stroke-[1.25] opacity-60 transition-all duration-300" />
+          <p className="text-xs font-sans text-zinc-400 dark:text-zinc-500 max-w-xs leading-relaxed tracking-wider font-normal transition-all duration-300">
+            Draw your signature here
           </p>
         </div>
       )}

@@ -1,20 +1,3 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Signity
 
-# Run and deploy your AI Studio app
-
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/e78c4101-58b7-4c40-bf2d-7128fed84231
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+A premium, minimalist, and private-by-design digital signature creator. Draw your signature using a mouse, trackpad, or stylus, smooth wobbly lines using real-time High Precision smoothing, and download or copy auto-cropped transparent PNG files ready for professional documents. Built with absolute data privacy in mind—all calculations occur locally in the browser sandbox, ensuring your signature data never leaves your device.
