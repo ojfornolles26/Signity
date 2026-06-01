@@ -726,22 +726,15 @@ export default function App() {
                 <div 
                   className="relative w-full h-[220px] rounded-2xl border border-zinc-200/60 dark:border-zinc-900/60 flex items-center justify-center overflow-hidden shrink-0"
                   style={{
-                    backgroundImage: isDark
-                      ? `
-                        linear-gradient(45deg, #18181b 25%, transparent 25%), 
-                        linear-gradient(-45deg, #18181b 25%, transparent 25%), 
-                        linear-gradient(45deg, transparent 75%, #18181b 75%), 
-                        linear-gradient(-45deg, transparent 75%, #18181b 75%)
-                      `
-                      : `
-                        linear-gradient(45deg, #f4f4f5 25%, transparent 25%), 
-                        linear-gradient(-45deg, #f4f4f5 25%, transparent 25%), 
-                        linear-gradient(45deg, transparent 75%, #f4f4f5 75%), 
-                        linear-gradient(-45deg, transparent 75%, #f4f4f5 75%)
-                      `,
+                    backgroundImage: `
+                      linear-gradient(45deg, #f4f4f5 25%, transparent 25%), 
+                      linear-gradient(-45deg, #f4f4f5 25%, transparent 25%), 
+                      linear-gradient(45deg, transparent 75%, #f4f4f5 75%), 
+                      linear-gradient(-45deg, transparent 75%, #f4f4f5 75%)
+                    `,
                     backgroundSize: '16px 16px',
                     backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0',
-                    backgroundColor: isDark ? '#09090b' : '#ffffff'
+                    backgroundColor: '#ffffff'
                   }}
                   id="transparent-checkerboard-wrapper"
                 >
