@@ -658,7 +658,7 @@ export default function App() {
             </span>
           </div>
           <p className="text-[11px] font-medium tracking-wide transition-colors duration-300 text-center">
-            © {new Date().getFullYear()} Signity. High-fidelity signature creation & export.
+            © {new Date().getFullYear()} Signity. Beautiful digital signature creation & export.
           </p>
           <div className="flex items-center gap-3 text-[11px] font-semibold text-zinc-400 dark:text-zinc-500" id="footer-legal-links">
             <button 
