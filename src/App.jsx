@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, MouseEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Undo, 
@@ -20,14 +20,13 @@ import {
   X,
   ChevronDown
 } from 'lucide-react';
-import { Stroke } from './types';
 import SignatureCanvas, { INK_COLORS } from './components/SignatureCanvas';
 import { getCroppedCanvas } from './utils/canvas';
 
 const PEN_SIZES = [
-  { id: 'thin' as const, width: 3, label: 'Thin', dotClass: 'w-1 h-1' },
-  { id: 'medium' as const, width: 6, label: 'Medium', dotClass: 'w-2 h-2' },
-  { id: 'thick' as const, width: 10, label: 'Thick', dotClass: 'w-3.5 h-3.5' },
+  { id: 'thin', width: 3, label: 'Thin', dotClass: 'w-1 h-1' },
+  { id: 'medium', width: 6, label: 'Medium', dotClass: 'w-2 h-2' },
+  { id: 'thick', width: 10, label: 'Thick', dotClass: 'w-3.5 h-3.5' },
 ];
 
 const FAQS = [
@@ -53,15 +52,9 @@ const FAQS = [
   }
 ];
 
-interface ToastState {
-  message: string;
-  type: 'success' | 'error' | 'info';
-  visible: boolean;
-}
-
 export default function App() {
   // Theme state persistence (defaults to light mode for first-time visitors)
-  const [isDark, setIsDark] = useState<boolean>(() => {
+  const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('signity_theme');
       if (saved) return saved === 'dark';
@@ -70,20 +63,20 @@ export default function App() {
   });
 
   // Signature States
-  const [strokes, setStrokes] = useState<Stroke[]>([]);
-  const [currentColorId, setCurrentColorId] = useState<'black' | 'navy' | 'red'>('black');
-  const [currentWidth, setCurrentWidth] = useState<number>(6); // Default: Medium (6px)
-  const [highPrecision, setHighPrecision] = useState<boolean>(false);
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
-  const [activeLegalModal, setActiveLegalModal] = useState<'privacy' | 'terms' | null>(null);
+  const [strokes, setStrokes] = useState([]);
+  const [currentColorId, setCurrentColorId] = useState('black');
+  const [currentWidth, setCurrentWidth] = useState(6); // Default: Medium (6px)
+  const [highPrecision, setHighPrecision] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [activeLegalModal, setActiveLegalModal] = useState(null);
 
   // Overlay Preview Modal States
-  const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
-  const [previewDataUrl, setPreviewDataUrl] = useState<string>('');
-  const [previewDimensions, setPreviewDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewDataUrl, setPreviewDataUrl] = useState('');
+  const [previewDimensions, setPreviewDimensions] = useState({ width: 0, height: 0 });
 
   // Feedback State
-  const [toast, setToast] = useState<ToastState>({
+  const [toast, setToast] = useState({
     message: '',
     type: 'success',
     visible: false,
@@ -103,7 +96,7 @@ export default function App() {
     }
   }, [isDark]);
 
-  const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+  const showToast = (message, type) => {
     setToast({
       message,
       type,
@@ -279,8 +272,6 @@ export default function App() {
       showToast('Failed to copy. Try downloading the PNG directly.', 'error');
     }
   };
-
-
 
   return (
     <div 

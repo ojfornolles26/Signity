@@ -3,12 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Point, Stroke } from '../types';
-
 /**
  * Draw a single stroke with bezier smoothing using quadratic curve midpoints.
  */
-export function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke, highPrecision: boolean = false) {
+export function drawStroke(ctx, stroke, highPrecision = false) {
   let points = stroke.points;
   if (points.length === 0) return;
 
@@ -18,7 +16,7 @@ export function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke, highPr
   ctx.lineJoin = 'round';
 
   if (highPrecision && points.length > 2) {
-    const smoothed: Point[] = [];
+    const smoothed = [];
     smoothed.push(points[0]);
     for (let i = 1; i < points.length - 1; i++) {
       const prev = points[i - 1];
@@ -66,7 +64,7 @@ export function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke, highPr
 /**
  * Draw all strokes sequentially on a target 2D context.
  */
-export function drawAllStrokes(ctx: CanvasRenderingContext2D, strokes: Stroke[], highPrecision: boolean = false) {
+export function drawAllStrokes(ctx, strokes, highPrecision = false) {
   strokes.forEach((stroke) => {
     drawStroke(ctx, stroke, highPrecision);
   });
@@ -76,7 +74,7 @@ export function drawAllStrokes(ctx: CanvasRenderingContext2D, strokes: Stroke[],
  * Find the tight bounding box containing all drawn strokes.
  * Includes stroke width and a fine padding to ensure nothing is clipped.
  */
-export function getStrokesBounds(strokes: Stroke[], padding: number = 12) {
+export function getStrokesBounds(strokes, padding = 12) {
   if (strokes.length === 0) return null;
 
   let minX = Infinity;
@@ -121,11 +119,11 @@ export function getStrokesBounds(strokes: Stroke[], padding: number = 12) {
  * Generate a transparent, cleanly-cropped high-resolution canvas element of the signature.
  */
 export function getCroppedCanvas(
-  strokes: Stroke[],
-  scaleMultiplier: number = window.devicePixelRatio || 2,
-  highPrecision: boolean = false,
-  includeBorder: boolean = false
-): HTMLCanvasElement | null {
+  strokes,
+  scaleMultiplier = window.devicePixelRatio || 2,
+  highPrecision = false,
+  includeBorder = false
+) {
   const bounds = getStrokesBounds(strokes);
   if (!bounds || bounds.width <= 0 || bounds.height <= 0) return null;
 

@@ -5,13 +5,12 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { FileSignature } from 'lucide-react';
-import { Stroke, Point } from '../types';
 import { drawStroke, drawAllStrokes, getStrokesBounds } from '../utils/canvas';
 
 // Visual & Export mapped inks to handle light/dark whiteboards beautifully
 export const INK_COLORS = [
   {
-    id: 'black' as const,
+    id: 'black',
     name: 'Black',
     lightColor: '#18181b',  // Onyx Black
     darkColor: '#f4f4f5',   // Crisp Zinc White
@@ -19,7 +18,7 @@ export const INK_COLORS = [
     circleColor: 'bg-zinc-900 dark:bg-zinc-100',
   },
   {
-    id: 'navy' as const,
+    id: 'navy',
     name: 'Royal Indigo',
     lightColor: '#4f46e5',  // Indigo-600 (matches brand light accent)
     darkColor: '#818cf8',   // Indigo-400 (matches brand dark accent)
@@ -27,7 +26,7 @@ export const INK_COLORS = [
     circleColor: 'bg-indigo-600 dark:bg-indigo-400',
   },
   {
-    id: 'red' as const,
+    id: 'red',
     name: 'Crimson Red',
     lightColor: '#b91c1c',  // Deep Crimson Red
     darkColor: '#f87171',   // Soft Red
@@ -36,15 +35,6 @@ export const INK_COLORS = [
   },
 ];
 
-interface SignatureCanvasProps {
-  strokes: Stroke[];
-  setStrokes: React.Dispatch<React.SetStateAction<Stroke[]>>;
-  currentColorId: 'black' | 'navy' | 'red';
-  currentWidth: number;
-  isDark: boolean;
-  highPrecision: boolean;
-}
-
 export default function SignatureCanvas({
   strokes,
   setStrokes,
@@ -52,11 +42,11 @@ export default function SignatureCanvas({
   currentWidth,
   isDark,
   highPrecision,
-}: SignatureCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
+}) {
+  const canvasRef = useRef(null);
+  const containerRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [activeStroke, setActiveStroke] = useState<Stroke | null>(null);
+  const [activeStroke, setActiveStroke] = useState(null);
 
   // Keep latest rendering parameters in refs so resize handler can access them without re-subscribing
   const paramsRef = useRef({ strokes, isDark, highPrecision });
@@ -90,7 +80,7 @@ export default function SignatureCanvas({
         
         // Re-draw all strokes after size update to prevent clearing
         const { strokes: currentStrokes, isDark: currentIsDark, highPrecision: currentHighPrecision } = paramsRef.current;
-        const getVisualColor = (colorId: string) => {
+        const getVisualColor = (colorId) => {
           const colorObj = INK_COLORS.find((c) => c.id === colorId);
           if (!colorObj) return colorId;
           return currentIsDark ? colorObj.darkColor : colorObj.lightColor;
@@ -135,7 +125,7 @@ export default function SignatureCanvas({
 
     ctx.clearRect(0, 0, width, height);
 
-    const getVisualColor = (colorId: string) => {
+    const getVisualColor = (colorId) => {
       const colorObj = INK_COLORS.find((c) => c.id === colorId);
       if (!colorObj) return colorId;
       return isDark ? colorObj.darkColor : colorObj.lightColor;
@@ -161,7 +151,7 @@ export default function SignatureCanvas({
   }, [strokes, activeStroke, isDark, highPrecision]);
 
   // Handle Event drawing boundaries
-  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  const handlePointerDown = (e) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -177,9 +167,9 @@ export default function SignatureCanvas({
     const y = e.clientY - rect.top;
 
     setIsDrawing(true);
-    const newPoint: Point = { x, y };
+    const newPoint = { x, y };
 
-    const newStroke: Stroke = {
+    const newStroke = {
       id: Math.random().toString(36).substring(2, 9),
       points: [newPoint],
       color: currentColorId,
@@ -189,7 +179,7 @@ export default function SignatureCanvas({
     setActiveStroke(newStroke);
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  const handlePointerMove = (e) => {
     if (!isDrawing || !activeStroke) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -198,7 +188,7 @@ export default function SignatureCanvas({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    const newPoint: Point = { x, y };
+    const newPoint = { x, y };
 
     setActiveStroke((prev) => {
       if (!prev) return null;
@@ -209,7 +199,7 @@ export default function SignatureCanvas({
     });
   };
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  const handlePointerUp = (e) => {
     if (!isDrawing || !activeStroke) return;
 
     const canvas = canvasRef.current;
