@@ -100,7 +100,7 @@ export default function App() {
 
   // Tab & Type-to-Signature States
   const [activeTab, setActiveTab] = useState('draw'); // 'draw' | 'type'
-  const [typedText, setTypedText] = useState('John Doe');
+  const [typedText, setTypedText] = useState('Rizal');
   const [selectedFontFamily, setSelectedFontFamily] = useState('Great Vibes');
   const [typedFontSize, setTypedFontSize] = useState(64);
   const [typedIsItalic, setTypedIsItalic] = useState(false);
