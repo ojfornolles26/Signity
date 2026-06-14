@@ -18,10 +18,11 @@ import {
   FlipHorizontal,
   Eye,
   X,
-  ChevronDown
+  ChevronDown,
+  Pen
 } from 'lucide-react';
 import SignatureCanvas, { INK_COLORS } from './components/SignatureCanvas';
-import { getCroppedCanvas } from './utils/canvas';
+import { getCroppedCanvas, getTextCroppedCanvas } from './utils/canvas';
 
 const PEN_SIZES = [
   { id: 'thin', width: 3, label: 'Thin', dotClass: 'w-1 h-1' },
@@ -29,10 +30,23 @@ const PEN_SIZES = [
   { id: 'thick', width: 10, label: 'Thick', dotClass: 'w-3.5 h-3.5' },
 ];
 
+const SIGNATURE_FONTS = [
+  { id: 'great_vibes', name: 'Great Vibes', family: 'Great Vibes' },
+  { id: 'alex_brush', name: 'Alex Brush', family: 'Alex Brush' },
+  { id: 'monsieur_la_doulaise', name: 'Ornate Script', family: 'Monsieur La Doulaise' },
+  { id: 'sacramento', name: 'Modern Cursive', family: 'Sacramento' },
+  { id: 'pinyon_script', name: 'Calligraphy', family: 'Pinyon Script' },
+  { id: 'allura', name: 'Casual Hand', family: 'Allura' },
+];
+
 const FAQS = [
   {
     question: "How does Signity protect my privacy?",
-    answer: "Your privacy is our top priority. Everything you draw stays entirely on your own device. Signity does not send, upload, or save your signature or drawing data to any remote servers. It is completely private and secure."
+    answer: "Your privacy is our top priority. Everything you draw or type stays entirely on your own device. Signity does not send, upload, or save your drawings, text, keypresses, or signature files to any remote servers. All calculations and image processing occur locally in your browser sandbox."
+  },
+  {
+    question: "Can I type my signature instead of drawing it?",
+    answer: "Yes! Switch to the 'Type Signature' tab, type your name, and select from a library of premium calligraphy and cursive fonts. You can customize the font size, slant (italics), weight (bold), and ink color to design a signature that fits your style."
   },
   {
     question: "What file format is exported, and what is its resolution?",
@@ -44,7 +58,7 @@ const FAQS = [
   },
   {
     question: "Is the signature cropped automatically?",
-    answer: "Yes, automatically! The app detects the edges of your signature and cuts away all the empty space around it. You can draw anywhere on the whiteboard (top, bottom, or corner)—your final file will be perfectly cropped to fit your signature with a tiny bit of breathing room."
+    answer: "Yes, automatically! Whether you draw on the whiteboard or type your name under the Type tab, the app detects the visual boundaries of your signature and crops away all empty space around it. You'll get a perfectly sized final file with a tiny bit of breathing room."
   },
   {
     question: "How do I attach my signature to a document?",
@@ -83,6 +97,14 @@ export default function App() {
   });
 
   const [copied, setCopied] = useState(false);
+
+  // Tab & Type-to-Signature States
+  const [activeTab, setActiveTab] = useState('draw'); // 'draw' | 'type'
+  const [typedText, setTypedText] = useState('John Doe');
+  const [selectedFontFamily, setSelectedFontFamily] = useState('Great Vibes');
+  const [typedFontSize, setTypedFontSize] = useState(64);
+  const [typedIsItalic, setTypedIsItalic] = useState(false);
+  const [typedIsBold, setTypedIsBold] = useState(false);
 
   // Apply dark class to body element for Tailwind selectors
   useEffect(() => {
@@ -146,28 +168,54 @@ export default function App() {
     showToast('Signature flipped horizontally!', 'success');
   };
 
+  // Helper to generate cropped high-res canvas depending on the active tab (draw or type)
+  const getSelectedCanvas = () => {
+    if (activeTab === 'draw') {
+      if (strokes.length === 0) {
+        showToast('Please sign the board first.', 'error');
+        return null;
+      }
+      const exportStrokes = strokes.map((stroke) => {
+        const colorObj = INK_COLORS.find((c) => c.id === stroke.color);
+        return {
+          ...stroke,
+          color: colorObj ? colorObj.exportColor : stroke.color,
+        };
+      });
+      const canvas = getCroppedCanvas(exportStrokes, 3, highPrecision);
+      if (!canvas) {
+        showToast('Could not calculate crop margins. Try drawing a larger signature.', 'error');
+      }
+      return canvas;
+    } else {
+      if (!typedText.trim()) {
+        showToast('Please type your name first.', 'error');
+        return null;
+      }
+      const colorObj = INK_COLORS.find((c) => c.id === currentColorId);
+      const exportColor = colorObj ? colorObj.exportColor : '#09090b';
+      const weightString = typedIsBold ? 'bold' : 'normal';
+      const canvas = getTextCroppedCanvas(
+        typedText,
+        selectedFontFamily,
+        typedFontSize,
+        weightString,
+        typedIsItalic,
+        exportColor,
+        3,
+        12
+      );
+      if (!canvas) {
+        showToast('Could not generate text signature canvas.', 'error');
+      }
+      return canvas;
+    }
+  };
+
   // Generate cropped high-resistance canvas snapshot & open overlay modal preview
   const handleOpenPreview = () => {
-    if (strokes.length === 0) {
-      showToast('Please sign the board to preview.', 'error');
-      return;
-    }
-
-    // Map drawing strokes to professional opaque export colors
-    const exportStrokes = strokes.map((stroke) => {
-      const colorObj = INK_COLORS.find((c) => c.id === stroke.color);
-      return {
-        ...stroke,
-        color: colorObj ? colorObj.exportColor : stroke.color,
-      };
-    });
-
-    // Create high-res physical canvas (3x rendering for crisp boundaries)
-    const renderCanvas = getCroppedCanvas(exportStrokes, 3, highPrecision);
-    if (!renderCanvas) {
-      showToast('Could not calculate crop margins. Try drawing a larger signature.', 'error');
-      return;
-    }
+    const renderCanvas = getSelectedCanvas();
+    if (!renderCanvas) return;
 
     try {
       const dataUrl = renderCanvas.toDataURL('image/png');
@@ -185,26 +233,8 @@ export default function App() {
 
   // Export signature as cropped transparent high-resolution PNG
   const handleDownload = () => {
-    if (strokes.length === 0) {
-      showToast('Please sign the board before downloading.', 'error');
-      return;
-    }
-
-    // Map drawing strokes to their professional opaque export colors
-    const exportStrokes = strokes.map((stroke) => {
-      const colorObj = INK_COLORS.find((c) => c.id === stroke.color);
-      return {
-        ...stroke,
-        color: colorObj ? colorObj.exportColor : stroke.color,
-      };
-    });
-
-    // Create high-res physical canvas (3x rendering for crisp boundaries)
-    const renderCanvas = getCroppedCanvas(exportStrokes, 3, highPrecision);
-    if (!renderCanvas) {
-      showToast('Could not calculate crop margins. Try drawing a larger signature.', 'error');
-      return;
-    }
+    const renderCanvas = getSelectedCanvas();
+    if (!renderCanvas) return;
 
     try {
       const dataUrl = renderCanvas.toDataURL('image/png');
@@ -221,27 +251,10 @@ export default function App() {
     }
   };
 
-  // Copy transparent PNG directly into student clipboard
+  // Copy transparent PNG directly into clipboard
   const handleCopy = () => {
-    if (strokes.length === 0) {
-      showToast('Please sign the board before copying.', 'error');
-      return;
-    }
-
-    // Map strokes to professional export colors
-    const exportStrokes = strokes.map((stroke) => {
-      const colorObj = INK_COLORS.find((c) => c.id === stroke.color);
-      return {
-        ...stroke,
-        color: colorObj ? colorObj.exportColor : stroke.color,
-      };
-    });
-
-    const renderCanvas = getCroppedCanvas(exportStrokes, 3, highPrecision);
-    if (!renderCanvas) {
-      showToast('Could not calculate crop margins.', 'error');
-      return;
-    }
+    const renderCanvas = getSelectedCanvas();
+    if (!renderCanvas) return;
 
     try {
       renderCanvas.toBlob((blob) => {
@@ -260,7 +273,7 @@ export default function App() {
             setTimeout(() => setCopied(false), 3000);
           }).catch((err) => {
             console.error(err);
-            // Help student understand standard iframe restrictions
+            // Help understand standard iframe restrictions
             showToast('Permission blocked. Standard browser sandboxing restricts iframe security. Download the PNG instead!', 'error');
           });
         } else {
@@ -285,7 +298,7 @@ export default function App() {
             initial={{ opacity: 0, y: 50, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4.5 py-3 rounded-xl shadow-xl border text-xs font-sans ${
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2.5 w-[calc(100%-2rem)] sm:w-auto max-w-sm sm:max-w-md px-4 py-3 sm:px-4.5 rounded-xl shadow-xl border text-xs font-sans ${
               toast.type === 'success'
                 ? 'bg-indigo-50 dark:bg-indigo-950/90 border-indigo-200/80 dark:border-indigo-900/60 text-indigo-800 dark:text-indigo-250'
                 : toast.type === 'error'
@@ -299,7 +312,7 @@ export default function App() {
             ) : toast.type === 'success' ? (
               <Check className="w-4 h-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
             ) : null}
-            <span className="font-semibold leading-normal">{toast.message}</span>
+            <span className="font-semibold leading-normal text-left break-words">{toast.message}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -362,56 +375,129 @@ export default function App() {
           <p className="text-zinc-500 dark:text-zinc-400 text-xs font-medium tracking-wide leading-relaxed transition-colors duration-300 max-w-xl">
             Draw with your mouse, stylus, or trackpad. The exported PNG will be cropped to your signature bounds automatically.
           </p>
-        </header>
+        </header>        {/* Premium Tab Switcher */}
+        <div className="flex bg-zinc-100 dark:bg-zinc-900/60 p-1 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/80 shadow-2xs self-start mb-6" id="tab-switcher">
+          <button
+            onClick={() => {
+              setActiveTab('draw');
+              showToast('Switched to drawing board.', 'info');
+            }}
+            className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+              activeTab === 'draw'
+                ? 'bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-2xs'
+                : 'text-zinc-500 hover:text-zinc-850 dark:hover:text-zinc-200'
+            }`}
+            id="tab-btn-draw"
+          >
+            <FileSignature className="w-3.5 h-3.5" />
+            <span>Draw Signature</span>
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('type');
+              showToast('Switched to typing board.', 'info');
+            }}
+            className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+              activeTab === 'type'
+                ? 'bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-2xs'
+                : 'text-zinc-500 hover:text-zinc-850 dark:hover:text-zinc-200'
+            }`}
+            id="tab-btn-type"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+            </svg>
+            <span>Type Signature</span>
+          </button>
+        </div>
 
         {/* Signature Whiteboard Component with Floating Toolbar */}
         <section className="relative mb-8" id="signature-whiteboard-section">
-          <SignatureCanvas
-            strokes={strokes}
-            setStrokes={setStrokes}
-            currentColorId={currentColorId}
-            currentWidth={currentWidth}
-            isDark={isDark}
-            highPrecision={highPrecision}
-          />
-          
-          {/* Floating Quick Operations (Undo / Mirror / Clear) */}
-          <div 
-            className="absolute top-4 right-4 z-20 flex items-center gap-1 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md p-1 border border-zinc-200/50 dark:border-zinc-800/60 rounded-xl shadow-xs transition-all duration-300"
-            id="floating-operations-bar"
-          >
-            <button
-              onClick={handleUndo}
-              disabled={strokes.length === 0}
-              className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg active:scale-90 transition-all cursor-pointer flex items-center justify-center"
-              title="Undo last stroke"
-              id="undo-operation-button"
-            >
-              <Undo className="w-3.5 h-3.5" />
-            </button>
+          {activeTab === 'draw' ? (
+            <>
+              <SignatureCanvas
+                strokes={strokes}
+                setStrokes={setStrokes}
+                currentColorId={currentColorId}
+                currentWidth={currentWidth}
+                isDark={isDark}
+                highPrecision={highPrecision}
+              />
+              
+              {/* Floating Quick Operations (Undo / Mirror / Clear) */}
+              <div 
+                className="absolute top-4 right-4 z-20 flex items-center gap-1 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md p-1 border border-zinc-200/50 dark:border-zinc-800/60 rounded-xl shadow-xs transition-all duration-300"
+                id="floating-operations-bar"
+              >
+                <button
+                  onClick={handleUndo}
+                  disabled={strokes.length === 0}
+                  className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg active:scale-90 transition-all cursor-pointer flex items-center justify-center"
+                  title="Undo last stroke"
+                  id="undo-operation-button"
+                >
+                  <Undo className="w-3.5 h-3.5" />
+                </button>
 
-            <button
-              onClick={handleFlipHorizontal}
-              disabled={strokes.length === 0}
-              className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg active:scale-90 transition-all cursor-pointer flex items-center justify-center"
-              title="Mirror signature horizontally"
-              id="flip-horizontal-button"
-            >
-              <FlipHorizontal className="w-3.5 h-3.5" />
-            </button>
+                <button
+                  onClick={handleFlipHorizontal}
+                  disabled={strokes.length === 0}
+                  className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg active:scale-90 transition-all cursor-pointer flex items-center justify-center"
+                  title="Mirror signature horizontally"
+                  id="flip-horizontal-button"
+                >
+                  <FlipHorizontal className="w-3.5 h-3.5" />
+                </button>
 
-            <div className="w-[1px] h-4 bg-zinc-250 dark:bg-zinc-800 mx-0.5"></div>
+                <div className="w-[1px] h-4 bg-zinc-250 dark:bg-zinc-800 mx-0.5"></div>
 
-            <button
-              onClick={handleClear}
-              disabled={strokes.length === 0}
-              className="p-1.5 text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 disabled:opacity-30 disabled:pointer-events-none hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg active:scale-90 transition-all cursor-pointer flex items-center justify-center"
-              title="Clear signature canvas"
-              id="clear-all-button"
+                <button
+                  onClick={handleClear}
+                  disabled={strokes.length === 0}
+                  className="p-1.5 text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 disabled:opacity-30 disabled:pointer-events-none hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg active:scale-90 transition-all cursor-pointer flex items-center justify-center"
+                  title="Clear signature canvas"
+                  id="clear-all-button"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <div
+              className="relative w-full h-80 sm:h-96 rounded-[24px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/80 shadow-[0_2px_12px_rgba(0,0,0,0.02)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] flex items-center justify-center overflow-hidden transition-all duration-300"
+              id="signature-type-preview-container"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
+              {/* Dynamic Grid Background Patterns */}
+              <div 
+                className="absolute inset-0 bg-[radial-gradient(#e4e4e7_1px,transparent_1px)] dark:bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:24px_24px] opacity-35 pointer-events-none transition-all duration-300" 
+                id="whiteboard-grid-type"
+              />
+
+              {/* Dotted Baseline guide */}
+              <div
+                className="absolute bottom-[30%] left-[10%] right-[10%] border-b border-dashed border-zinc-200/80 dark:border-zinc-800/60 pointer-events-none transition-all duration-300"
+                id="dotted-baseline-line-type"
+              />
+
+              {/* Text rendering */}
+              <div 
+                className="z-10 px-4 py-8 text-center select-none max-w-[95%] whitespace-nowrap transition-all duration-350"
+                style={{
+                  fontFamily: `"${selectedFontFamily}", cursive, sans-serif`,
+                  fontSize: `${typedFontSize}px`,
+                  fontStyle: typedIsItalic ? 'italic' : 'normal',
+                  fontWeight: typedIsBold ? 'bold' : 'normal',
+                  color: isDark 
+                    ? (INK_COLORS.find(c => c.id === currentColorId)?.darkColor || '#f4f4f5') 
+                    : (INK_COLORS.find(c => c.id === currentColorId)?.lightColor || '#18181b'),
+                  lineHeight: 1.6,
+                }}
+                id="type-rendered-signature"
+              >
+                {typedText.trim() ? typedText : <span className="text-zinc-300 dark:text-zinc-700 italic select-none">Your Signature</span>}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Beautiful Simple Control Bar */}
@@ -419,7 +505,56 @@ export default function App() {
           className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/80 p-5 rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.015)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 flex flex-col gap-6"
           id="control-bar-dock"
         >
-          {/* Top Section: Formatting options in structured responsive grid */}
+          {activeTab === 'type' && (
+            <div className="flex flex-col gap-4" id="type-mode-input-section">
+              <div className="flex flex-col gap-2">
+                <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 dark:text-zinc-500">
+                  Signature Name
+                </span>
+                <input
+                  type="text"
+                  value={typedText}
+                  onChange={(e) => setTypedText(e.target.value)}
+                  maxLength={30}
+                  placeholder="Enter your name to generate signature..."
+                  className="w-full px-4.5 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-950/30 text-zinc-800 dark:text-zinc-100 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-indigo-650 dark:focus:ring-indigo-400 focus:border-transparent transition-all"
+                  id="typed-signature-name-input"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 dark:text-zinc-500">
+                  Select Font Style
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3" id="font-preview-grid">
+                  {SIGNATURE_FONTS.map((font) => (
+                    <button
+                      key={font.id}
+                      onClick={() => {
+                        setSelectedFontFamily(font.family);
+                      }}
+                      className={`p-3 rounded-2xl border text-center transition-all duration-300 cursor-pointer ${
+                        selectedFontFamily === font.family
+                          ? 'border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/25 dark:border-indigo-500 text-indigo-600 dark:text-indigo-400 shadow-2xs font-semibold'
+                          : 'border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/60 hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
+                      }`}
+                    >
+                      <span className="block text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-1">{font.name}</span>
+                      <span
+                        className="block text-lg overflow-hidden text-ellipsis whitespace-nowrap px-1"
+                        style={{ fontFamily: `"${font.family}", cursive, sans-serif` }}
+                      >
+                        {typedText.trim() || 'Signature'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <hr className="border-zinc-200/50 dark:border-zinc-800/40" />
+            </div>
+          )}
+
+          {/* Formatting options in structured responsive grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-end" id="style-adjustments-grid">
             
             {/* Color circles panel */}
@@ -451,67 +586,156 @@ export default function App() {
               </div>
             </div>
 
-            {/* Pen Line Weight Panel */}
-            <div className="flex flex-col gap-2" id="pen-size-selectors-group">
-              <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 dark:text-zinc-500">
-                Pen Weight
-              </span>
-              <div className="flex bg-zinc-100 dark:bg-zinc-800/60 p-0.5 rounded-xl h-8 items-center self-start" id="pen-size-buttons">
-                {PEN_SIZES.map((size) => {
-                  const isActive = currentWidth === size.width;
-                  return (
-                    <button
-                      key={size.id}
-                      onClick={() => {
-                        setCurrentWidth(size.width);
-                        showToast(`Selected ${size.label} brush thickness.`, 'info');
-                      }}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-300 active:scale-95 cursor-pointer ${
-                        isActive
-                          ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs'
-                          : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
-                      }`}
-                      title={`Select ${size.label} weight`}
-                      aria-label={`Select ${size.label} weight`}
-                      id={`size-btn-${size.id}`}
-                    >
-                      {size.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            {activeTab === 'draw' ? (
+              <>
+                {/* Pen Line Weight Panel with Slider and Preview Dot */}
+                <div className="flex flex-col gap-2 col-span-1" id="pen-size-selectors-group">
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 dark:text-zinc-500">
+                    Pen Weight ({currentWidth}px)
+                  </span>
+                  <div className="flex flex-col gap-2" id="pen-size-controls">
+                    {/* Top Row: Discrete Presets */}
+                    <div className="flex bg-zinc-100 dark:bg-zinc-800/60 p-0.5 rounded-xl items-center self-start" id="pen-size-buttons">
+                      {PEN_SIZES.map((size) => {
+                        const isActive = currentWidth === size.width;
+                        return (
+                          <button
+                            key={size.id}
+                            type="button"
+                            onClick={() => {
+                              setCurrentWidth(size.width);
+                            }}
+                            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-300 active:scale-95 cursor-pointer ${
+                              isActive
+                                ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs'
+                                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-850 dark:hover:text-zinc-200'
+                            }`}
+                            title={`Select ${size.label} weight`}
+                          >
+                            {size.label}
+                          </button>
+                        );
+                      })}
+                    </div>
 
-            {/* High Precision Mode Toggle */}
-            <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1" id="precision-toggle-group">
-              <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 dark:text-zinc-500">
-                Smoothing Mode
-              </span>
-              <div className="flex items-center h-8" id="precision-toggle-button-container">
-                <button
-                  onClick={() => {
-                    const nextVal = !highPrecision;
-                    setHighPrecision(nextVal);
-                    showToast(
-                      nextVal
-                        ? 'High Precision smoothing enabled! Curves will look highly streamlined.'
-                        : 'Standard precision drawing enabled.',
-                      'info'
-                    );
-                  }}
-                  className={`h-8 px-3 rounded-xl border flex items-center gap-2 text-xs font-semibold transition-all duration-300 active:scale-95 cursor-pointer self-start ${
-                    highPrecision
-                      ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200/80 dark:border-indigo-900/60 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                      : 'bg-transparent border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40 hover:text-zinc-900 dark:hover:text-zinc-200'
-                  }`}
-                  id="high-precision-mode-toggle"
-                  title="Smoothes curves to remove trackpad or mouse hand-jitters"
-                >
-                  <div className={`w-1.5 h-1.5 rounded-full ${highPrecision ? 'bg-indigo-600 dark:bg-indigo-400 animate-pulse' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
-                  <span>High Precision</span>
-                </button>
-              </div>
-            </div>
+                    {/* Bottom Row: Slider & Preview Dot */}
+                    <div className="flex items-center gap-3 w-full h-8" id="pen-slider-row">
+                      <Pen className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-505 shrink-0" />
+                      <input
+                        type="range"
+                        min="2"
+                        max="16"
+                        value={currentWidth}
+                        onChange={(e) => setCurrentWidth(parseInt(e.target.value))}
+                        className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-600 dark:accent-indigo-400"
+                        title="Adjust pen weight"
+                      />
+
+                      {/* Dynamic Brush Size Preview Dot */}
+                      <div className="w-8 h-8 rounded-full border border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 shrink-0">
+                        <div
+                          className="rounded-full transition-all duration-100"
+                          style={{
+                            width: `${currentWidth}px`,
+                            height: `${currentWidth}px`,
+                            backgroundColor: isDark 
+                              ? (INK_COLORS.find(c => c.id === currentColorId)?.darkColor || '#f4f4f5') 
+                              : (INK_COLORS.find(c => c.id === currentColorId)?.lightColor || '#18181b')
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* High Precision Mode Toggle */}
+                <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1" id="precision-toggle-group">
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 dark:text-zinc-500">
+                    Smoothing Mode
+                  </span>
+                  <div className="flex items-center h-8" id="precision-toggle-button-container">
+                    <button
+                      onClick={() => {
+                        const nextVal = !highPrecision;
+                        setHighPrecision(nextVal);
+                        showToast(
+                          nextVal
+                            ? 'High Precision smoothing enabled! Curves will look highly streamlined.'
+                            : 'Standard precision drawing enabled.',
+                          'info'
+                        );
+                      }}
+                      className={`h-8 px-3 rounded-xl border flex items-center gap-2 text-xs font-semibold transition-all duration-300 active:scale-95 cursor-pointer self-start ${
+                        highPrecision
+                          ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200/80 dark:border-indigo-900/60 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                          : 'bg-transparent border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40 hover:text-zinc-900 dark:hover:text-zinc-200'
+                      }`}
+                      id="high-precision-mode-toggle"
+                      title="Smoothes curves to remove trackpad or mouse hand-jitters"
+                    >
+                      <div className={`w-1.5 h-1.5 rounded-full ${highPrecision ? 'bg-indigo-600 dark:bg-indigo-400 animate-pulse' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
+                      <span>High Precision</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Font Size Panel */}
+                <div className="flex flex-col gap-2" id="type-font-size-group">
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 dark:text-zinc-500">
+                    Font Size ({typedFontSize}px)
+                  </span>
+                  <div className="flex items-center gap-3.5 h-8" id="font-size-slider-wrapper">
+                    <input
+                      type="range"
+                      min="32"
+                      max="96"
+                      value={typedFontSize}
+                      onChange={(e) => setTypedFontSize(parseInt(e.target.value))}
+                      className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-600 dark:accent-indigo-400"
+                    />
+                  </div>
+                </div>
+
+                {/* Text formatting options (Italic / Bold) */}
+                <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1" id="type-format-group">
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 dark:text-zinc-500">
+                    Format Styling
+                  </span>
+                  <div className="flex gap-2 h-8" id="type-format-buttons">
+                    <button
+                      onClick={() => {
+                        setTypedIsItalic(!typedIsItalic);
+                        showToast(typedIsItalic ? 'Slant disabled.' : 'Slant (Italic) enabled.', 'info');
+                      }}
+                      className={`h-8 px-3.5 rounded-xl border flex items-center justify-center text-xs font-bold transition-all duration-300 active:scale-95 cursor-pointer ${
+                        typedIsItalic
+                          ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200/80 dark:border-indigo-900/60 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                          : 'bg-transparent border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40'
+                      }`}
+                      title="Toggle Slant (Italic)"
+                    >
+                      Italic Slant
+                    </button>
+                    <button
+                      onClick={() => {
+                        setTypedIsBold(!typedIsBold);
+                        showToast(typedIsBold ? 'Bold style disabled.' : 'Bold style enabled.', 'info');
+                      }}
+                      className={`h-8 px-3.5 rounded-xl border flex items-center justify-center text-xs font-bold transition-all duration-300 active:scale-95 cursor-pointer ${
+                        typedIsBold
+                          ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200/80 dark:border-indigo-900/60 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                          : 'bg-transparent border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40'
+                      }`}
+                      title="Toggle Weight (Bold)"
+                    >
+                      Bold Weight
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
           </div>
 
@@ -524,14 +748,14 @@ export default function App() {
             {/* Left-aligned helper for visual balance */}
             <div className="hidden sm:flex items-center gap-2 text-zinc-400 dark:text-zinc-500 text-xs font-medium">
               <FileSignature className="w-3.5 h-3.5" />
-              <span>Draw your signature and export instantly</span>
+              <span>{activeTab === 'draw' ? 'Draw your signature and export instantly' : 'Type your name and export instantly'}</span>
             </div>
 
             {/* Ultimate Exports: Preview, Copy & Download */}
             <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 flex-1 sm:flex-initial w-full sm:w-auto" id="export-actions">
               <button
                 onClick={handleOpenPreview}
-                disabled={strokes.length === 0}
+                disabled={activeTab === 'draw' ? strokes.length === 0 : !typedText.trim()}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-700 dark:text-zinc-300 font-semibold text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800/60 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-300 flex-1 sm:flex-initial justify-center cursor-pointer shadow-2xs"
                 title="Preview cropped signature with transparency details"
                 id="preview-trigger-button"
@@ -542,7 +766,7 @@ export default function App() {
 
               <button
                 onClick={handleCopy}
-                disabled={strokes.length === 0}
+                disabled={activeTab === 'draw' ? strokes.length === 0 : !typedText.trim()}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-700 dark:text-zinc-300 font-semibold text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800/60 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-300 flex-1 sm:flex-initial justify-center cursor-pointer"
                 id="copy-clipboard-button"
               >
@@ -556,7 +780,7 @@ export default function App() {
 
               <button
                 onClick={handleDownload}
-                disabled={strokes.length === 0}
+                disabled={activeTab === 'draw' ? strokes.length === 0 : !typedText.trim()}
                 className="flex items-center gap-2 px-4.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 text-white rounded-xl font-bold text-xs shadow-sm transition-all duration-300 w-full sm:w-auto justify-center cursor-pointer"
                 id="primary-download-button"
               >

@@ -155,3 +155,106 @@ export function getCroppedCanvas(
 
   return cropCanvas;
 }
+
+/**
+ * Generate a transparent, cleanly-cropped high-resolution canvas element of the typed text.
+ * It draws the text dynamically, scans pixels to find the bounding box, and crops it.
+ */
+export function getTextCroppedCanvas(
+  text,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  isItalic,
+  color,
+  scaleMultiplier = 3,
+  padding = 12
+) {
+  if (!text) return null;
+
+  const tempCanvas = document.createElement('canvas');
+  const tempCtx = tempCanvas.getContext('2d');
+  if (!tempCtx) return null;
+
+  // Set initial dimensions large enough to fit the text comfortably
+  const initialWidth = Math.max(1600, text.length * fontSize * 2.5);
+  const initialHeight = Math.max(500, fontSize * 4.5);
+
+  tempCanvas.width = initialWidth * scaleMultiplier;
+  tempCanvas.height = initialHeight * scaleMultiplier;
+
+  tempCtx.scale(scaleMultiplier, scaleMultiplier);
+
+  // Clear background for perfect transparency
+  tempCtx.clearRect(0, 0, initialWidth, initialHeight);
+
+  // Setup text styles
+  const slantStyle = isItalic ? 'italic' : 'normal';
+  tempCtx.font = `${slantStyle} ${fontWeight} ${fontSize}px "${fontFamily}", cursive, sans-serif`;
+  tempCtx.fillStyle = color;
+  tempCtx.textBaseline = 'middle';
+  tempCtx.textAlign = 'center';
+
+  // Draw the text in the exact center
+  tempCtx.fillText(text, initialWidth / 2, initialHeight / 2);
+
+  // Scan pixels for non-transparent boundaries
+  const imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+  const data = imgData.data;
+
+  let minX = tempCanvas.width;
+  let minY = tempCanvas.height;
+  let maxX = 0;
+  let maxY = 0;
+  let hasPixels = false;
+
+  for (let y = 0; y < tempCanvas.height; y++) {
+    for (let x = 0; x < tempCanvas.width; x++) {
+      const alpha = data[(y * tempCanvas.width + x) * 4 + 3];
+      if (alpha > 0) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+        hasPixels = true;
+      }
+    }
+  }
+
+  if (!hasPixels) return null;
+
+  // Apply padding in scaled pixels
+  const scaledPadding = padding * scaleMultiplier;
+  minX = Math.max(0, minX - scaledPadding);
+  minY = Math.max(0, minY - scaledPadding);
+  maxX = Math.min(tempCanvas.width, maxX + scaledPadding);
+  maxY = Math.min(tempCanvas.height, maxY + scaledPadding);
+
+  const cropWidth = maxX - minX;
+  const cropHeight = maxY - minY;
+
+  if (cropWidth <= 0 || cropHeight <= 0) return null;
+
+  // Create the final cropped canvas
+  const cropCanvas = document.createElement('canvas');
+  cropCanvas.width = cropWidth;
+  cropCanvas.height = cropHeight;
+  const cropCtx = cropCanvas.getContext('2d');
+  if (!cropCtx) return null;
+
+  // Copy the cropped region from the temporary canvas
+  cropCtx.drawImage(
+    tempCanvas,
+    minX,
+    minY,
+    cropWidth,
+    cropHeight,
+    0,
+    0,
+    cropWidth,
+    cropHeight
+  );
+
+  return cropCanvas;
+}
+

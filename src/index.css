@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital,wght@0,400;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital,wght@0,400;1,400&family=Alex+Brush&family=Allura&family=Great+Vibes&family=Monsieur+La+Doulaise&family=Pinyon+Script&family=Sacramento&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -8,4 +8,51 @@
   --font-display: 'Plus Jakarta Sans', var(--font-sans);
   --font-brand: 'Instrument Serif', Georgia, serif;
 }
+
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(161, 161, 170, 0.3); /* zinc-400 at 30% */
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(161, 161, 170, 0.6); /* zinc-400 at 60% */
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Dark Mode Scrollbars */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(63, 63, 70, 0.4); /* zinc-700 at 40% */
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(63, 63, 70, 0.7); /* zinc-700 at 70% */
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+/* W3C Standard Scrollbars (Firefox) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(161, 161, 170, 0.3) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(63, 63, 70, 0.4) transparent;
+}
+
 

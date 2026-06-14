@@ -20,8 +20,8 @@ export const INK_COLORS = [
   {
     id: 'navy',
     name: 'Royal Indigo',
-    lightColor: '#4f46e5',  // Indigo-600 (matches brand light accent)
-    darkColor: '#818cf8',   // Indigo-400 (matches brand dark accent)
+    lightColor: '#4f46e5',  // Indigo-600
+    darkColor: '#818cf8',   // Indigo-400
     exportColor: '#1e1b4b', // Deep Royal Indigo for export
     circleColor: 'bg-indigo-600 dark:bg-indigo-400',
   },
@@ -33,7 +33,32 @@ export const INK_COLORS = [
     exportColor: '#7f1d1d', // Solid Dark Crimson for export
     circleColor: 'bg-red-700 dark:bg-red-400',
   },
+  {
+    id: 'green',
+    name: 'Forest Green',
+    lightColor: '#0f766e',  // Teal/Emerald
+    darkColor: '#2dd4bf',   // Bright Mint Teal
+    exportColor: '#115e59', // Deep Forest Green for export
+    circleColor: 'bg-teal-700 dark:bg-teal-400',
+  },
+  {
+    id: 'blue',
+    name: 'Midnight Navy',
+    lightColor: '#1e3a8a',  // Deep Blue
+    darkColor: '#60a5fa',   // Sky/Baby Blue
+    exportColor: '#172554', // Dark Navy for export
+    circleColor: 'bg-blue-800 dark:bg-blue-400',
+  },
+  {
+    id: 'purple',
+    name: 'Plum Purple',
+    lightColor: '#701a75',  // Chic Purple
+    darkColor: '#f472b6',   // Soft Pinkish Plum
+    exportColor: '#4a044e', // Deep Plum/Eggplant for export
+    circleColor: 'bg-purple-750 dark:bg-purple-400',
+  },
 ];
+
 
 export default function SignatureCanvas({
   strokes,
